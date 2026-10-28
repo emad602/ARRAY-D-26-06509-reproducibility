@@ -1,0 +1,113 @@
+{
+  "phase": "11E_STRICT",
+  "created_utc": "2026-08-23T18:33:29.304308+00:00",
+  "source_phase11d_final_manifest_sha256": "61f9b7ea1d2c1bb1f471adc79012396912c597979b7e9cb9de3101a46e1ec892",
+  "protocol_timing": "Locked after Phase11D was closed and its summary was available, but before fitting or evaluating the new Phase11E learned-fusion candidates.",
+  "not_preregistered_before_phase11d": true,
+  "development_only": true,
+  "meta_evaluation": "For learned fusion, train on four frozen Phase11D folds and predict the held meta-fold; pool the five held-fold predictions.",
+  "fixed_blend_conv_weights": [
+    0.05,
+    0.1,
+    0.15,
+    0.2,
+    0.25,
+    0.3,
+    0.35,
+    0.4,
+    0.45,
+    0.5,
+    0.55,
+    0.6,
+    0.65,
+    0.7,
+    0.75,
+    0.8,
+    0.85,
+    0.9,
+    0.95
+  ],
+  "learned_candidates": {
+    "residual_linear_cf": {
+      "kind": "linear",
+      "hidden_dim": null,
+      "dropout": 0.0,
+      "epochs": 30,
+      "batch_size": 256,
+      "learning_rate": 0.002,
+      "weight_decay": 0.001,
+      "label_smoothing": 0.02,
+      "class_weight_power": 0.35,
+      "seeds": [
+        42
+      ]
+    },
+    "residual_mlp_cf": {
+      "kind": "mlp",
+      "hidden_dim": 64,
+      "dropout": 0.15,
+      "epochs": 30,
+      "batch_size": 256,
+      "learning_rate": 0.001,
+      "weight_decay": 0.001,
+      "label_smoothing": 0.02,
+      "class_weight_power": 0.35,
+      "seeds": [
+        42,
+        123,
+        2026
+      ]
+    }
+  },
+  "candidate_names": [
+    "convnext_baseline",
+    "dino_baseline",
+    "blend_conv_05_dino_95",
+    "blend_conv_10_dino_90",
+    "blend_conv_15_dino_85",
+    "blend_conv_20_dino_80",
+    "blend_conv_25_dino_75",
+    "blend_conv_30_dino_70",
+    "blend_conv_35_dino_65",
+    "blend_conv_40_dino_60",
+    "blend_conv_45_dino_55",
+    "blend_conv_50_dino_50",
+    "blend_conv_55_dino_45",
+    "blend_conv_60_dino_40",
+    "blend_conv_65_dino_35",
+    "blend_conv_70_dino_30",
+    "blend_conv_75_dino_25",
+    "blend_conv_80_dino_20",
+    "blend_conv_85_dino_15",
+    "blend_conv_90_dino_10",
+    "blend_conv_95_dino_05",
+    "residual_linear_cf",
+    "residual_mlp_cf"
+  ],
+  "promotion_rule": {
+    "baseline": "convnext_baseline",
+    "ranking": [
+      "composite_score",
+      "macro_f1",
+      "balanced_accuracy",
+      "accuracy"
+    ],
+    "minimum_composite_gain": 0.005,
+    "maximum_macro_f1_drop": 0.003,
+    "paired_lesion_bootstrap_replicates": 2000,
+    "bootstrap_seed": 11043,
+    "require_composite_delta_ci95_lower_above_zero": true,
+    "fallback_if_gate_fails": "convnext_baseline"
+  },
+  "deployment_base_probabilities": {
+    "convnext": "arithmetic mean of five frozen Phase11D ConvNeXt fold-model probabilities",
+    "dino": "arithmetic mean of five frozen Phase11D DINO fold-model probabilities"
+  },
+  "forbidden": [
+    "HAM fixed hold-out",
+    "BCN20000",
+    "Derm7pt",
+    "Phase10A outcomes"
+  ],
+  "interpretation": "Phase11E is development selection evidence, not an independent generalization estimate. The final frozen system must be evaluated once on untouched datasets in later phases."
+}

@@ -1,0 +1,87 @@
+{
+  "analysis_id": "ARRAY-D-26-06509_W2_INPUT_CONFIGURATION_SENSITIVITY",
+  "version": "1.0",
+  "locked_utc": "2026-10-14T20:38:22.037423+00:00",
+  "reviewer_target": "Reviewer 3, comment 2: internal held-fold fusion inputs versus final five-model-averaged deployment inputs.",
+  "scientific_status": "post-hoc mechanistic sensitivity analysis on the historically exposed fixed HAM test; not new independent validation",
+  "question": "Does replacing one-model-per-branch OOF-like probability inputs with five-model-per-branch mean probabilities materially change the frozen residual fusion input distribution, calibration, or predictive behavior?",
+  "frozen_system": {
+    "branch_aggregation_deployment": "arithmetic mean of five ConvNeXt fold probabilities and five DINOv2 fold probabilities before fusion",
+    "fusion_architecture": "14-input non-affine LayerNorm -> Linear(14,64) -> GELU -> Dropout(0.15, disabled at inference) -> Linear(64,7); correction added to ConvNeXt log-probabilities",
+    "fusion_seeds": [
+      42,
+      123,
+      2026
+    ],
+    "seed_aggregation": "arithmetic mean of seed probabilities",
+    "calibration": "single frozen scalar temperature after fusion-seed probability averaging",
+    "log_temperature": -0.17686153685013786,
+    "temperature": 0.8378957941821958
+  },
+  "configurations": {
+    "DEPLOYMENT": "F(mean_k ConvNeXt_k, mean_k DINO_k), average 3 fusion seeds, then frozen temperature",
+    "SINGLE_k": "F(ConvNeXt_k, DINO_k) for k=0..4, average 3 fusion seeds, then the same frozen temperature",
+    "OUTPUT_AVERAGED_ALTERNATIVE": "For each k compute the pre-calibrated 3-seed fusion probability; arithmetic-mean those five fused probabilities; then apply the same frozen temperature. This isolates order-of-operations: F(mean inputs) versus mean F(single inputs)."
+  },
+  "primary_comparison": {
+    "contrast": "DEPLOYMENT minus OUTPUT_AVERAGED_ALTERNATIVE",
+    "primary_metric": "macro-F1",
+    "paired_uncertainty": "10,000 lesion-cluster bootstrap replicates on the fixed HAM test",
+    "bootstrap_seed": 15102026
+  },
+  "secondary_performance_metrics": [
+    "accuracy",
+    "balanced_accuracy",
+    "melanoma_recall",
+    "NLL",
+    "multiclass Brier",
+    "ECE15"
+  ],
+  "same_image_input_shift_diagnostics": [
+    "ConvNeXt max-probability shift SINGLE_k minus five-model mean",
+    "DINOv2 max-probability shift SINGLE_k minus five-model mean",
+    "ConvNeXt entropy shift SINGLE_k minus five-model mean",
+    "DINOv2 entropy shift SINGLE_k minus five-model mean",
+    "Jensen-Shannon divergence between SINGLE_k and five-model mean for each branch",
+    "Euclidean distance after the exact 14-dimensional non-affine LayerNorm used by the fusion network"
+  ],
+  "fusion_output_shift_diagnostics": [
+    "Jensen-Shannon divergence between each SINGLE_k fused output and DEPLOYMENT",
+    "Jensen-Shannon divergence between OUTPUT_AVERAGED_ALTERNATIVE and DEPLOYMENT",
+    "argmax disagreement rates",
+    "absolute maximum-probability difference"
+  ],
+  "training_input_reference": "Phase11D development OOF ConvNeXt/DINO probabilities are summarized descriptively as the historical one-held-fold-per-image input distribution. No development labels are used to tune or alter the frozen system.",
+  "integrity_rules": [
+    "No backbone retraining.",
+    "No fusion refitting.",
+    "No recalibration or new temperature fitting.",
+    "No threshold tuning.",
+    "No model, seed, fold, or metric selection based on the result.",
+    "All five SINGLE_k results are reported, regardless of direction.",
+    "The fixed HAM test is described as historically exposed and used only for mechanistic sensitivity.",
+    "The deployment reproduction must match the previously frozen Phase11F fusion probabilities before any interpretation."
+  ],
+  "source_sha256": {
+    "phase11e_final_deployment_recipe.json": "553f4c06ae071fdffbe06be27d2fc5dd392c73309116a8e3c0d792384cf5ca2f",
+    "phase12c1_v2_selected_calibrator.json": "31b3f1fb9fffb0c739127cab6814e19470b872f58054814eb62e2a5db4741bc3",
+    "phase11f_final_ham_manifest.json": "fa41d7a00ec568d128e4ea14d025935eba8d5603861772172d1f56b583720551",
+    "phase11f_frozen_final_holdout_probabilities.npz": "809c9a97522f3b4da3759cb863c2ad4d87c38b207677a30cfb8427ba7ea281e8",
+    "phase11d_strict_v2_aligned_crossfit_probabilities.npz": "94a7182647c1bd01d269bd2282a6957da525dc188bfd915555d514d901899a93",
+    "residual_mlp_cf_seed_42.pt": "ea1115f9d9dd9978b6b0f3a9cdd2d53fa1136d17ac9e63929fc11f5f61f54182",
+    "residual_mlp_cf_seed_123.pt": "6adce0d3a2adab5f1ddeaa017fe076de1de509749f801ace10d6d5a3ddd7fb1e",
+    "residual_mlp_cf_seed_2026.pt": "3292f5cc0443f673c37d0d3be35eabdb9888edf2a0a750e909b0303fd3e16829",
+    "convnext_5fold_mean_holdout.npz": "e5caabaf4fead6cc692f0461eb4cc120cc9607e8eedcb686a39d432fb795a693",
+    "dino_5fold_mean_holdout.npz": "ffe63aa5bf07004ab412379781a27995a719fbd8749fa7e57e595979408f4abe",
+    "convnext_fold_0_holdout.npz": "a64a5c61214edfea9a32cb75bd3261675ad520909ba60842f60bbf2e61a10171",
+    "convnext_fold_1_holdout.npz": "47d0d47481e4270a6e2ad46c5f3e94a31dc2c27a6f7fe11ee7558fd096d6a0a1",
+    "convnext_fold_2_holdout.npz": "9e10eab3614ef11fe6bbc9ba498c656e800b152657b56cd8861d93b87689ad16",
+    "convnext_fold_3_holdout.npz": "e89a7b80de54168ac1b45fdccc19d207646edc19926bbfe435b92d53d93d9734",
+    "convnext_fold_4_holdout.npz": "3bee566f368cac81a6bbc0b1a8c50c3bad59d600dc25a395cfbd5eb196c55a8d",
+    "dino_fold_0_holdout.npz": "39a305964463dc502841c0c731f66d5b56e665dc16f7e8d60c20334c5cd036cb",
+    "dino_fold_1_holdout.npz": "218aafbc591fc770207954d7cbd3c9079863984f3d9e5182ceb680e35ddec5ac",
+    "dino_fold_2_holdout.npz": "1ffe8158ba1845ae6b7212687c4083e0707f55742c4926df8be2578f07734c1c",
+    "dino_fold_3_holdout.npz": "b4dcd9523e976daa1a12a6ab947b1ebbc066d360e84827abdf88657321ab17ab",
+    "dino_fold_4_holdout.npz": "3e246037f6753702689525d22eac64582989d31f0b127029ee1a80d04a4f0145"
+  }
+}

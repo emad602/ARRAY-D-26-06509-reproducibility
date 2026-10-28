@@ -1,0 +1,128 @@
+{
+  "study": "ARRAY-D-26-06509",
+  "workstream": "W6_M7_CLASS_BY_COHORT_INTERACTION",
+  "status": "PREANALYSIS_FROZEN_V1_1_NO_CASE_LEVEL_DATA_LOADED",
+  "frozen_utc": "2026-10-18",
+  "analysis_scope": "retrospective, previously exposed outcomes; not new independent confirmation",
+  "primary_system": "Proposed Phase12F frozen deployment; no refitting or alteration of model probabilities",
+  "cohorts": {
+    "HAM": "development lesion-disjoint OOF, remove true akiec; retained predicted akiec counted incorrect",
+    "Derm7pt": "exact locked 987 eligible cases; six shared true classes; retained seven predicted classes, akiec predictions counted incorrect",
+    "BCN": "exploratory secondary only; not used for main title decision"
+  },
+  "class_order_shared6": [
+    "bcc",
+    "bkl",
+    "df",
+    "mel",
+    "nv",
+    "vasc"
+  ],
+  "class_reference": "bcc",
+  "cohort_reference": "HAM",
+  "outcome": "correct = int(prediction top1 equals true label); no class collapsing or probability renormalization",
+  "glm": {
+    "family": "binomial",
+    "link": "logit",
+    "formula_full": "correct ~ C(cohort)*C(true_class)",
+    "formula_reduced": "correct ~ C(cohort)+C(true_class)",
+    "interaction_df": 5,
+    "lrt": "2*(logLik_full-logLik_reduced), chi-square reference df=5, report as conventional likelihood-ratio test",
+    "cluster_method_chosen": "cluster-robust sandwich covariance at lesion_id level in HAM; Derm7pt each case gets an independent cluster identifier",
+    "joint_robust_test": "five-parameter cluster-robust joint Wald chi-square, reported alongside LRT",
+    "inference_rule": "Main title criterion requires conventional LRT df5 p<0.05, five-parameter cluster-robust joint Wald p<0.05, and sensitivity LRT df3 and sensitivity cluster-robust joint Wald df3 each p<0.05. Conventional LRT is not cluster robust.",
+    "separation_fallback": "detect perfect/quasi separation or optimizer non-identifiability; use bias-reduced Firth logistic in full and reduced models, document solver and fit before inference; if robust joint inference unavailable, mark primary title decision INDETERMINATE, do not force pass"
+  },
+  "sensitivity": {
+    "remove_true_classes": [
+      "df",
+      "vasc"
+    ],
+    "interaction_df": 3,
+    "evaluate": "Refit the df/VASC-excluded subset and test the remaining cohort×class interaction using the predeclared LRT df3 and cluster-robust joint Wald df3; report p values and denominators. Coefficient-sign agreement is not a valid sensitivity gate in this saturated GLM."
+  },
+  "reference_policy": {
+    "primary": "HAM development OOF predictions for deployed Phase12F",
+    "optional_sensitivity": "W1 M1 per-class data only if available with verified provenance; not substituted for primary OOF or used to choose model"
+  },
+  "title_gate": {
+    "required_all": [
+      "conventional_primary_interaction_LRT_df5_p<0.05",
+      "primary_cluster_robust_joint_Wald_df5_p<0.05",
+      "sensitivity_LRT_df3_p<0.05",
+      "sensitivity_cluster_robust_Wald_df3_p<0.05"
+    ],
+    "decision_if_failed": "Do not retain class-dependent wording based on M7; choose narrower descriptive title language. If any test not estimable, gate INDETERMINATE and no title promotion."
+  },
+  "per_class_table": {
+    "systems": [
+      "5C five-ConvNeXt mean",
+      "5D five-DINOv2 mean",
+      "simple average 5C plus 5D probability mean",
+      "frozen Phase12F deployment"
+    ],
+    "datasets": [
+      "HAM development OOF",
+      "Derm7pt n=987",
+      "BCN exploratory if valid matched records exist"
+    ],
+    "required": [
+      "n_true_support",
+      "recall",
+      "precision",
+      "false_positives",
+      "melanoma_specificity"
+    ],
+    "undefined_rule": "report NA and underlying denominator, never replace undefined precision by zero silently",
+    "probability_rule": "frozen archive predictions only, no new inference or fitting"
+  },
+  "bootstrap": "NO new fitting; no bootstrap selected (cluster-robust SE chosen for W6)",
+  "source_gates": [
+    "sha256 all frozen source files before case-level access",
+    "all image/case identities unique per cohort",
+    "HAM lesion_id clustering and no lesion crossing folds",
+    "Derm7pt exactly 987 eligible and true akiec absent",
+    "all six class mappings locked and seven output dimensions unchanged",
+    "per-system per-cohort keywise identity matching verified before differences",
+    "no new label-based threshold/model selection",
+    "new immutable output directory and atomic artifact writes"
+  ],
+  "outputs": [
+    "W6_primary_LRT_and_cluster_robust_joint_test.json",
+    "W6_sensitivity_interaction.json",
+    "W6_per_class_5C_5D_simple_average_deployment.csv",
+    "W6_title_gate_decision.json",
+    "W6_provenance_manifest.json"
+  ],
+  "notes": [
+    "GLM coefficients are cohort contrasts in correct-class conditional accuracy and not calibration",
+    "Sparse DF/VASC strata can cause instability; separation diagnostics mandatory",
+    "No inferential claim about BCN interaction; describe only",
+    "Firth fallback is conditional and must not be assumed standard chi-square valid under cluster dependence"
+  ],
+  "version": "1.1",
+  "supersedes": {
+    "path": "ARRAY_D_26_06509_W6_M7_PREANALYSIS_PROTOCOL_LOCK_v1.json",
+    "sha256": "bd57789d579bb888fa14e6d6899caedc4a1a56bb95d82f611b8c311954c74d72"
+  },
+  "reporting_effect_scale": {
+    "inferential_scale": "log odds via binomial GLM cohort-by-class interaction",
+    "descriptive_scale": "percentage point change in per-class recall (Derm7pt minus HAM) with class support and both cohort recall values",
+    "reference_note": "BCC is reference for individual coefficients; these are relative differences versus BCC, NOT absolute worsening or improvement. LRT and joint Wald reference invariant under full-rank coding.",
+    "saturated_model_note": "Removing DF/VASC does not change identifiable remaining class-by-cohort cell logits; directional consistency was vacuous."
+  },
+  "change_log": [
+    {
+      "version": "1.1",
+      "date_utc": "2026-10-18",
+      "timing": "before any W6 case-level file load, scoring, or model fit",
+      "change": "Replace non-identifying sensitivity_direction_consistent title condition with sensitivity LRT df3 p<0.05 AND sensitivity cluster-robust joint Wald df3 p<0.05",
+      "reason": "Saturated cohort×class binomial GLM estimates cohort-class cells independently; deleting DF/VASC cannot meaningfully test coefficient sign stability of remaining interactions."
+    },
+    {
+      "version": "1.1",
+      "timing": "before any W6 case-level file load",
+      "change": "Mandate per-class absolute recall changes in percentage points and explicitly label BCC-referenced interaction coefficients relative, not absolute."
+    }
+  ]
+}

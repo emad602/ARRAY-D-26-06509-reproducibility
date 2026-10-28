@@ -1,0 +1,121 @@
+{
+  "analysis_id": "ARRAY-D-26-06509_W12_PERFORMANCE_COMPUTE_PARETO",
+  "version": "1.0",
+  "locked_utc": "2026-10-15T11:13:11.606531+00:00",
+  "master_plan": "ARRAY-D-26-06509_Final_Master_Revision_Plan_v1.1",
+  "reviewer_scope": [
+    "R3-6: resource-matched comparison and latency-scope clarification",
+    "R5-7: practical applicability and whether performance gains justify computational cost",
+    "R4-09: intended deployment context and efficiency implications",
+    "W3/W12 linkage: attach cost to all defensible ablation configurations"
+  ],
+  "authoritative_efficiency_sources": {
+    "primary_direct_measurement": "Phase18C run_02_PREDEFINED_XAI_EFFICIENCY",
+    "primary_hardware": "NVIDIA A100-SXM4-40GB",
+    "primary_precision": "CUDA AMP",
+    "primary_batch_sizes": [
+      1,
+      16
+    ],
+    "primary_scope": "model computation on prepared device tensors; disk I/O, image decoding, preprocessing, and host-device transfer excluded",
+    "supplemental_legacy_source": "Phase16_5A locked A100 benchmark, used only for MAC accounting, ScNet, standalone fusion timing, and optional batch-8 context",
+    "batch8_rule": "Phase18C did not directly measure batch 8. Batch-8 values may be shown only as supplemental Phase16_5A measurements, never relabelled as Phase18C."
+  },
+  "cost_composition_rules": {
+    "parameters": "Exact additive count across instantiated checkpoints; temperature contributes one scalar parameter.",
+    "MACs": "Exact additive under the locked Phase16_5A convention: Conv/Linear MACs plus explicit DINO qk/av attention; excluded normalization, activation, pooling, softmax, concatenation, and temperature arithmetic.",
+    "checkpoint_storage": "Exact additive from frozen checkpoint file bytes. For residual deployment use the directly audited full package size.",
+    "latency_direct": "Use Phase18C direct medians for 1C, 1D, 5C, 5D, and the full 5C+5D residual system.",
+    "latency_composed": "For unmeasured n=2..4 same-family and 1C+1D/simple combinations, estimate sequential batch latency by summing directly measured single-model medians. For 5C+5D simple averaging, use direct 5C plus direct 5D latency. Mark every such value ESTIMATED, not measured.",
+    "fusion_latency": "For OOF residual-fusion cost and composition validation only, use the locked Phase16_5A standalone fusion timing; three seed passes are summed. The phase/source distinction must be explicit.",
+    "peak_memory": "Do NOT add or estimate peak CUDA memory for unmeasured combinations. Report peak allocated/reserved memory only for directly profiled 1C, 1D, 5C, 5D, and full systems.",
+    "throughput": "Use direct Phase18C throughput only for directly measured systems. For composed latency rows, an estimated sequential throughput may be derived as batch_size*1000/latency_ms and labelled ESTIMATED."
+  },
+  "latency_composition_validation": {
+    "batch1": {
+      "5C_direct_ms": 71.34977250007069,
+      "5C_additive_ms": 69.95884000389195,
+      "5C_additive_error_pct_vs_direct": -1.9494561053819153,
+      "5D_direct_ms": 40.44426000018575,
+      "5D_additive_ms": 41.47953749907174,
+      "5D_additive_error_pct_vs_direct": 2.5597637313211674,
+      "full_direct_ms": 113.52292450010282,
+      "full_composed_ms": 112.62654449151887,
+      "full_composed_error_pct_vs_direct": -0.7896026397585756
+    },
+    "batch16": {
+      "5C_direct_ms": 72.27001700084656,
+      "5C_additive_ms": 71.62607250393194,
+      "5C_additive_error_pct_vs_direct": -0.8910257996854835,
+      "5D_direct_ms": 102.999269499378,
+      "5D_additive_ms": 103.4946800018588,
+      "5D_additive_error_pct_vs_direct": 0.48098448162662566,
+      "full_direct_ms": 177.1548704991801,
+      "full_composed_ms": 176.1555584985108,
+      "full_composed_error_pct_vs_direct": -0.5640894872681083
+    }
+  },
+  "validation_acceptance_rule": "Composed latency may be used descriptively if direct-vs-composed validation error remains within \u00b15% on the audited representative configurations; otherwise no composed latency is reported.",
+  "performance_cost_panels": {
+    "OOF": {
+      "evidence_role": "primary internal component ablation",
+      "cost_semantics": "single-pair inference cost, not 5+5 deployment cost",
+      "systems": [
+        "ScNet (context/comparator)",
+        "1C",
+        "1D",
+        "1C+1D simple average",
+        "1C+1D linear fusion",
+        "1C+1D residual fusion",
+        "calibrated residual"
+      ],
+      "note": "M1 nested estimate is a selection-sensitivity reference, not a separate deployment configuration and is not placed on the Pareto frontier."
+    },
+    "fixed_HAM": {
+      "evidence_role": "qualified historically exposed sensitivity",
+      "systems": "ConvNeXt n=1..5 means; DINO n=1..5 means; mean 1C+1D; 5C+5D simple average; frozen deployment"
+    },
+    "Derm7pt": {
+      "evidence_role": "post-reveal descriptive scoring of pre-reveal frozen branch predictions",
+      "systems": "ConvNeXt n=1..5 means; DINO n=1..5 means; mean 1C+1D; 5C+5D simple average; frozen deployment"
+    },
+    "BCN20000": {
+      "evidence_role": "secondary retrospective descriptive",
+      "systems": "ConvNeXt n=1..5 means; DINO n=1..5 means; mean 1C+1D; 5C+5D simple average; frozen deployment"
+    }
+  },
+  "pareto_definition": {
+    "x_axis_primary": "aggregate MACs per image, log scale",
+    "y_axis": "macro-F1",
+    "efficient_point": "No other plotted configuration has both <= MACs and >= macro-F1, with at least one strict inequality.",
+    "secondary_cost_tables": [
+      "parameters",
+      "checkpoint storage",
+      "batch-1 latency",
+      "batch-16 latency",
+      "peak CUDA allocated memory where directly measured"
+    ],
+    "dominated_points": "Never omit a valid configuration merely because it is dominated."
+  },
+  "ScNet_rule": {
+    "internal": "Include the protocol-matched ScNet OOF point from the locked Phase16_5A benchmark.",
+    "external": "Leave explicit placeholder 'external ScNet pending W4'; do not fabricate or extrapolate an external point."
+  },
+  "deployment_context": {
+    "intended_context": "server-side research system",
+    "prohibited_claims": [
+      "clinical deployment readiness",
+      "mobile/edge suitability",
+      "energy efficiency",
+      "end-to-end clinical workflow latency"
+    ],
+    "timing_limit": "Reported timing is model execution only on prepared GPU tensors."
+  },
+  "integrity_rules": [
+    "No training, inference, model adaptation, recalibration, threshold change, or performance recomputation from labels for W12.",
+    "W12 joins frozen W3 performance values to locked compute measurements only.",
+    "Direct measurement and composed estimates must be visually and textually distinguishable.",
+    "Do not select a precision mode or batch size after seeing performance; CUDA AMP is the primary locked comparison mode.",
+    "No title/model change is triggered by W12; W12 informs Discussion and reviewer responses."
+  ]
+}

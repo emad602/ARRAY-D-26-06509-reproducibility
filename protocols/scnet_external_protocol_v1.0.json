@@ -1,0 +1,109 @@
+{
+  "id": "ARRAY-D-26-06509/W4/M5",
+  "version": "1.0",
+  "created_utc": "2026-10-15T12:29:03.345561+00:00",
+  "status": "FROZEN_SPECIFICATION_EXECUTION_BLOCKED",
+  "evidence_role": "post-reveal prespecified frozen-model descriptive; not prospective, blinded, or confirmatory",
+  "scnet": {
+    "description": "protocol-matched independent reimplementation under a study-specific training recipe",
+    "architecture": "MobileNetV3-Large width=1.0",
+    "parameters": 3531831,
+    "input_size": [
+      224,
+      224
+    ],
+    "resize": "direct bilinear",
+    "normalization": "ImageNet",
+    "inference": "CUDA autocast float16, deterministic single view, no TTA",
+    "checkpoint_pattern": "phase12b_scnet_outer_fold_{k}_best_inner_macro_f1.pt",
+    "folds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "checkpoint_selection": "best inner macro-F1, no outer-label selection",
+    "checkpoint_sha256": "MUST_RESOLVE_FROM_ORIGINAL_BINARY_BEFORE_EXECUTION"
+  },
+  "gate": {
+    "dataset": "stored HAM10000 outer-fold images in original order",
+    "minimum_folds": 1,
+    "comparison": "regenerated fold softmax against corresponding stored ScNet OOF probabilities",
+    "max_absolute_probability_difference_lte": 0.001,
+    "argmax_agreement_gte": 0.999,
+    "both_required": true,
+    "failure_action": "STOP W4; no external inference; no tolerance changes",
+    "additional_checks": [
+      "exact image identifiers and order",
+      "class index order",
+      "probability finiteness and normalization",
+      "checkpoint SHA256",
+      "same AMP path"
+    ]
+  },
+  "external_identities": {
+    "Derm7pt": {
+      "complete_n": 1011,
+      "scored_shared_six_n": 987,
+      "manifest_sha256": "9d52d078b99c76b94a0be8e0e1a623a47953fdb36b0a62d23f2699ca55cb83a1",
+      "required_case": "derm7pt_0815",
+      "recovered_image_sha256": "64e01599c1ff6528b4fd4dffc30352c906535874d6bcf0909c914b917b9a0a98"
+    },
+    "BCN20000": {
+      "sanitized_n": 11977,
+      "manifest_sha256": "b7931585ce87878af4a9845d27e2915235a1cfc419ffdf759ecb010f4d639889",
+      "role": "secondary retrospective historically exposed"
+    }
+  },
+  "inference_stage_A": {
+    "prerequisite": "gate PASS and binary/manifest hash verification",
+    "per_image": "five individual fold softmax probability vectors",
+    "primary": "arithmetic mean of five softmax probability vectors",
+    "outputs": [
+      "ordered IDs",
+      "five checkpoint SHA256",
+      "manifest SHA256",
+      "individual probabilities",
+      "arithmetic mean",
+      "artifact SHA256"
+    ],
+    "freeze_before_labels_or_metrics": true
+  },
+  "scoring_stage_B": {
+    "Derm7pt": "987 shared-six cases; 7-output argmax; akiec prediction is error; no six-class renormalization",
+    "BCN": "primary image-level, secondary lesion-level mean probabilities",
+    "primary_metric": "Proposed minus ScNet macro-F1",
+    "secondary": [
+      "accuracy",
+      "class recall",
+      "five individual fold results and range",
+      "difference-in-degradation"
+    ],
+    "bootstrap": "paired case resampling Derm7pt; lesion-cluster resampling BCN; independent HAM lesion and Derm7pt case resampling for difference-in-degradation",
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 20261015,
+    "uncertainty": "95% percentile bootstrap intervals; report supports and denominators",
+    "internal_reference": "use validated harmonized shared-six internal predictions, do not infer missing class mapping"
+  },
+  "calibration": "No external calibration, threshold tuning, or recalibration; ECE/NLL/Brier cross-system comparison deferred to W5/M6 development-only matched calibration",
+  "prohibitions": [
+    "no model/recipe changes based on external labels",
+    "no threshold changes",
+    "no six-class renormalization",
+    "no use of historically exposed HAM as untouched",
+    "no claim of faithful published ScNet reproduction"
+  ],
+  "execution_requirements": [
+    "original five checkpoint binaries",
+    "stored HAM ScNet OOF probabilities and fold/image manifest",
+    "HAM image bytes",
+    "frozen Derm7pt and BCN ordered image manifests and image bytes",
+    "source notebook implementation and package versions"
+  ],
+  "source_basis": [
+    "user handoff 2026-10-15",
+    "Master Revision Plan v1.1 M5",
+    "W1/W2/W3/W12 FINAL result packages"
+  ]
+}

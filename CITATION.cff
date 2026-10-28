@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata below."
+title: "Code, analysis protocols and aggregate results for prediction-frozen external validation of CNN-Transformer fusion in dermoscopy"
+type: software
+version: "1.0"
+authors:
+  - family-names: Estambouli
+    given-names: Emad Atef
+    affiliation: "Syrian Virtual University"
+  - family-names: Almustafa
+    given-names: Muhammad Mazen
+    affiliation: "Yarmouk Private University"
+license: MIT
+repository-code: "https://github.com/emad602/ARRAY-D-26-06509-reproducibility"

@@ -1,0 +1,186 @@
+{
+  "analysis_id": "ARRAY-D-26-06509_W3_M4_ABLATION_CAPACITY_AVERAGING_LOCK",
+  "version": "1.1",
+  "locked_utc": "2026-10-15T07:14:47.195816+00:00",
+  "master_plan": "ARRAY-D-26-06509_Final_Master_Revision_Plan_v1.1",
+  "reviewer_scope": [
+    "R2-7: single/ensemble ConvNeXt, DINOv2, simple averaging, residual fusion, calibration ablations",
+    "R3-3: separate fusion-design effects from model capacity and ensemble effects",
+    "R3-6: resource-matched comparison",
+    "R5-4: stronger ablations and simpler fusion comparator",
+    "R5-7: justify performance-versus-compute trade-off"
+  ],
+  "questions": {
+    "Q1": {
+      "question": "What does fusion design add at fixed branch capacity?",
+      "dataset": "development OOF: 8513 images / 6349 lesions",
+      "evidence_role": "PRIMARY internal ablation",
+      "rows": [
+        "single ConvNeXt OOF",
+        "single DINOv2 OOF",
+        "simple 50/50 probability average OOF",
+        "fixed lightweight linear fusion comparator OOF",
+        "residual MLP pre-temperature OOF",
+        "full scalar-temperature calibrated residual pipeline OOF",
+        "W1/M1 strict nested meta-level result shown separately as selection-sensitivity reference"
+      ]
+    },
+    "Q2": {
+      "question": "Does CNN+Transformer complementarity add value beyond simply using two models?",
+      "evidence_role": "QUALIFIED fixed-HAM sensitivity; descriptive external replication",
+      "fixed_HAM_comparators": {
+        "2C": "all 10 unordered ConvNeXt fold pairs; equal-weight probability mean",
+        "2D": "all 10 unordered DINOv2 fold pairs; equal-weight probability mean",
+        "1C+1D": "all 25 ConvNeXt-fold x DINO-fold pairs; 50/50 probability mean"
+      },
+      "reporting": "Report every combination plus mean, median, min, and max; no pair selection."
+    },
+    "Q3": {
+      "question": "What is the effect of ensemble size?",
+      "definition": "For each backbone family and n=1..5, evaluate every C(5,n) subset with equal-weight probability averaging.",
+      "additional_rows": "5C+5D simple 50/50 branch average and frozen 5C+5D residual-fusion deployment",
+      "evidence_role": "QUALIFIED fixed-HAM sensitivity plus descriptive external scoring"
+    },
+    "Q4": {
+      "question": "Is the DINOv2 branch worth its additional computational cost?",
+      "key_comparison": "frozen 5C+5D residual deployment versus 5C probability mean",
+      "link": "W12 performance-compute analysis",
+      "reporting": "Discrimination + parameters + MACs + checkpoint size + same-environment latency where defensible."
+    }
+  },
+  "lightweight_comparator": {
+    "type": "multinomial logistic regression / linear softmax",
+    "features": "same 14 log-probability features as residual MLP, followed by the same per-sample non-affine LayerNorm",
+    "L2_C": 1.0,
+    "fit_intercept": true,
+    "optimizer": "deterministic LBFGS-equivalent multinomial optimizer",
+    "max_iterations": 2000,
+    "tolerance": 1e-08,
+    "hyperparameter_search": false,
+    "class_weighting": {
+      "power": 0.35,
+      "formula": "within each training split, raw w_c = n_c^(-0.35), then scale all class weights so mean sample weight over the training split is 1.0"
+    },
+    "cross_fitting": "five lesion-disjoint folds; train on four folds and predict only the held fold",
+    "selection_rule": "No second lightweight fusion method will be tried and selected after results are observed.",
+    "random_state": 16102026
+  },
+  "calibration_rules": {
+    "development_OOF": "Each valid OOF row may receive its own scalar temperature fitted cross-fitted: held fold k receives T fitted only on the other four OOF folds.",
+    "submitted_residual": "Use existing Phase12C1 cross-fitted calibration evidence for the submitted residual pipeline.",
+    "mathematical_note": "Scalar temperature preserves per-image argmax; therefore accuracy, macro-F1, balanced accuracy and recall are identical pre/post temperature by construction. Calibration contribution is assessed with NLL, Brier and ECE.",
+    "fixed_HAM_external": "No new temperature is fitted for 2C, 2D, 1C+1D, n-model ensembles or 5C using fixed-HAM, Derm7pt or BCN labels.",
+    "fairness_rule": "Raw fixed-HAM/external calibration metrics, if shown, are labeled uncalibrated/not-matched and are not used for cross-system calibration superiority claims."
+  },
+  "prespecified_contrasts": {
+    "P1": {
+      "role": "PRIMARY internal ablation",
+      "contrast": "residual MLP pre-temperature OOF minus simple 50/50 average OOF",
+      "metric": "macro-F1",
+      "uncertainty": "paired lesion-cluster bootstrap, 10000 replicates",
+      "multiplicity": "none; single primary internal contrast",
+      "bootstrap_seed": 16102026
+    },
+    "P2": {
+      "role": "QUALIFIED fixed-HAM sensitivity",
+      "contrast": "mean macro-F1 across all 25 1C+1D combinations minus mean macro-F1 across all 10 2C combinations, recomputed within each lesion bootstrap replicate",
+      "metric": "macro-F1",
+      "uncertainty": "paired lesion-cluster bootstrap, 10000 replicates",
+      "claim": "descriptive confidence interval only; no confirmatory p-value",
+      "bootstrap_seed": 16102026
+    },
+    "P3": {
+      "role": "QUALIFIED fixed-HAM sensitivity",
+      "contrast": "frozen deployment minus 5C probability mean",
+      "metric": "macro-F1",
+      "uncertainty": "paired lesion-cluster bootstrap, 10000 replicates",
+      "claim": "descriptive confidence interval only; no confirmatory p-value",
+      "bootstrap_seed": 16102026
+    }
+  },
+  "external_artifact_audit": {
+    "Derm7pt": {
+      "status": "PASS",
+      "phase": "PHASE16_2A_STRICT_LABEL_BLIND_DERM7PT_OVERLAP_AND_FROZEN_PREDICTIONS",
+      "manifest_status": "CLOSED_LABEL_BLIND_PREDICTIONS_FROZEN_PENDING_CROSS_DATASET_VISUAL_REVIEW",
+      "diagnosis_values_accessed_when_generated": false,
+      "interpretation": "Per-fold and five-fold-mean ConvNeXt/DINO predictions were frozen label-blind before diagnosis access. New W3 scoring is post-reveal scoring of pre-reveal frozen predictions; descriptive only.",
+      "base_prediction_hashes": {
+        "base_predictions/convnext_5fold_mean_derm7pt_label_blind.npz": "910bc3bd7f3ef71fc2568acf714418de6b27a651485aa374f7c8a7fa4aeb03ac",
+        "base_predictions/convnext_fold_0_derm7pt_label_blind.npz": "69b8e0e88f3123f7de1f2f6c57b6e59bdf876b07dc9033140b4eab45c084c732",
+        "base_predictions/convnext_fold_1_derm7pt_label_blind.npz": "461d45af9f25fa782a51d2b09901f2f06d18748681e7fafb4e60569d80910691",
+        "base_predictions/convnext_fold_2_derm7pt_label_blind.npz": "4178356e1a3f2bc0491bb6720360665d2cb5ac20a761cfaaf95d2abadfcf8e0a",
+        "base_predictions/convnext_fold_3_derm7pt_label_blind.npz": "375302c26e76d7d8ec0a453f5f9f27c36d1c4b5b6d72ed0a90c9d39e8623a973",
+        "base_predictions/convnext_fold_4_derm7pt_label_blind.npz": "c5816f76525a4b09b5e9d3196bdb620c7147edd8893fb3bc09a30821fc6991b0",
+        "base_predictions/dino_5fold_mean_derm7pt_label_blind.npz": "b0bb1379d8a11b02dc744e038bb7be28a17c62fbec7b41f7ee7ca647ce697b83",
+        "base_predictions/dino_fold_0_derm7pt_label_blind.npz": "ba36d355161c1c5a681768a06930943697f47f4118df74c044c2cb5509a750ad",
+        "base_predictions/dino_fold_1_derm7pt_label_blind.npz": "f5a88f9fb5d75f66875b226d908cbad34d0ae79d777ac2ee5a3f0bd6ce992a41",
+        "base_predictions/dino_fold_2_derm7pt_label_blind.npz": "44332ff475cf234db8b10c93dc6b335debde02cbdd7a89d2b19a3fdec7971f91",
+        "base_predictions/dino_fold_3_derm7pt_label_blind.npz": "4e1d0c1720bb4393d0ebd0f30b6466656063475ef5c8d3d4ac0ad7a3885f67ab",
+        "base_predictions/dino_fold_4_derm7pt_label_blind.npz": "732345843f7ff14f9cdb6c5f5e19a88c8d8f2c4297b07707077c1eba8e46c6df"
+      }
+    },
+    "BCN20000": {
+      "status": "PASS, secondary retrospective only",
+      "phase": "PHASE16_4A_LOCKED_SECONDARY_BCN20000_EXTERNAL_VALIDATION_PHASE12F",
+      "scientific_status": "previously_exposed_dataset_frozen_final_system_no_adaptation",
+      "model_adaptation_after_result": false,
+      "new_training_or_fine_tuning": false,
+      "recalibration_or_tta_change": false,
+      "interpretation": "Per-fold frozen branch predictions exist. BCN was historically exposed; all W3 scoring remains retrospective descriptive evidence.",
+      "base_prediction_hashes": {
+        "base_predictions/convnext_fold_0_bcn20000.npz": "2c0614c6fba2910d59c1574b1cd26101bef584d09e356f1d0115038d2abd3e27",
+        "base_predictions/convnext_fold_1_bcn20000.npz": "bd3860fe3d5b6a74ea0d62b9b269fdb75a4f99cebbf5eaf853bee69ac48dd7ea",
+        "base_predictions/convnext_fold_2_bcn20000.npz": "67fd79a83013af60ccb7b6e297cd1be6a84d20f904fe49837e564fb08c472ad4",
+        "base_predictions/convnext_fold_3_bcn20000.npz": "954dbc1ea2af3f48583f61f22385f6e53883782b7d989496627cdd00f5e21a0d",
+        "base_predictions/convnext_fold_4_bcn20000.npz": "c180c69c40605e5495658ed64b4bbf1ec6f2bc6474885d0499a0e4e3d6564a85",
+        "base_predictions/dino_fold_0_bcn20000.npz": "b1c38661c43ff290d1a1e64cc6999014077178e174259fe98f7d119368249f19",
+        "base_predictions/dino_fold_1_bcn20000.npz": "5ba885e71d18e2d5ebefcbc237d532012b174acaec2e500d491113c941ddee7b",
+        "base_predictions/dino_fold_2_bcn20000.npz": "e85e1308827427d1d79155cf12b1d72b6391698157a066955f43d06e48e6e51e",
+        "base_predictions/dino_fold_3_bcn20000.npz": "479729bff65c454d2c11d36bf6f78464139ce6a6c2f6052cb959e2faaa17cf04",
+        "base_predictions/dino_fold_4_bcn20000.npz": "05045e74595415b4fea057d275af1f65583e9958b118966a61ad5b0b3b4e1e91"
+      }
+    }
+  },
+  "compute_W12_link": {
+    "required_fields": [
+      "parameters",
+      "MACs per image",
+      "checkpoint/storage footprint",
+      "latency"
+    ],
+    "latency_if_new_measurement": {
+      "device": "same A100 environment used in prior efficiency work",
+      "batch_size": 1,
+      "warmup_runs": 20,
+      "timed_runs": 100,
+      "synchronization": "CUDA synchronize around timed inference",
+      "summary": "median and IQR",
+      "scope": "model execution; preprocessing/data transfer separated unless consistently included for all rows"
+    },
+    "pareto_rule": "Keep every valid configuration, including configurations that dominate the proposed system."
+  },
+  "guardrails": [
+    "No backbone retraining for W3.",
+    "No external-data tuning or recalibration.",
+    "No cherry-picking of folds, pairs or subset sizes.",
+    "No post-result switching of lightweight comparator.",
+    "If residual fusion does not improve over simple averaging, report that prominently.",
+    "If 1C+1D does not outperform 2C at equal model count, do not claim architectural complementarity.",
+    "If 5C dominates full deployment on performance-compute trade-off, do not claim DINOv2 is cost-effective.",
+    "Final title/architectural framing decision waits for W3 and W6 together."
+  ],
+  "change_from_v1.0": [
+    "Added deterministic random seeds for bootstrap and any implementation requiring a seed.",
+    "No scientific contrast, comparator, dataset role, calibration rule, or interpretation rule changed.",
+    "This update was made before any W3 result calculation."
+  ],
+  "random_seeds": {
+    "P1_development_lesion_bootstrap": 16102026,
+    "P2_fixed_HAM_lesion_bootstrap": 16102026,
+    "P3_fixed_HAM_lesion_bootstrap": 16102026,
+    "Derm7pt_descriptive_bootstrap_if_used": 16102027,
+    "BCN20000_descriptive_bootstrap_if_used": 16102028,
+    "logistic_regression_random_state": 16102026
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "document": "ARRAY-D-26-06509_W12_Source_Matching_Amendment_v1.1",
+  "status": "POST-ANALYSIS REPORTING CORRECTION BEFORE MANUSCRIPT USE",
+  "purpose": "Correct the source hierarchy for the matched ScNet-vs-proposed efficiency table without changing any W3 performance result, compute result, Pareto calculation, or model.",
+  "original_protocol_preserved": "ARRAY-D-26-06509_W12_Preanalysis_Protocol_Lock_v1.0 remains unchanged as the historical pre-analysis lock.",
+  "corrections": [
+    "Main matched Table 6 must use Phase16_5A for both ScNet and proposed system because both were profiled in the same benchmark/session and use the same memory definition.",
+    "Phase18C remains authoritative for its directly measured component systems (1C, 1D, 5C, 5D, full) and for supplemental component/Pareto latency context, but it is not mixed with Phase16_5A ScNet in a matched table.",
+    "Main Table 6 memory is peak total allocated MiB for both Phase16_5A rows.",
+    "MACs and latency are explicitly treated as different cost dimensions.",
+    "The OOF Pareto figure now displays the strict M1 nested estimate as a hollow sensitivity marker at the same residual inference cost."
+  ],
+  "results_changed": false,
+  "model_changed": false,
+  "new_inference": false,
+  "new_training": false,
+  "external_labels_used": false
+}
